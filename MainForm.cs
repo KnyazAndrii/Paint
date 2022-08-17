@@ -92,7 +92,6 @@ namespace Paint
             DisableToolMenu();
             tsbLine.BackColor = Color.Gold;
         }
-
         enum ToolType
         {
             Pen = 1,
