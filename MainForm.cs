@@ -14,57 +14,82 @@ namespace Paint
     public partial class MainForm : Form
     {
         private bool _isClicked;
-        private ArrayPoints arrayPoints;
-        private List<ArrayPoints> arrayPointsList;
-        Point _start;
+        private BaseTool _drawingTool;
+        private List<BaseTool> _toolList;
         Bitmap _temp;
-        ToolType toolType;
+        private ToolType toolType;
+        private Pen pen;
+        enum ToolType
+        {
+            Pen = 1,
+            Line = 2
+        }
+
         public MainForm()
         {
             InitializeComponent();
-            arrayPoints = new ArrayPoints(2);
-            arrayPointsList = new List<ArrayPoints>();
+            _toolList = new List<BaseTool>();
             pbMain.Image = new Bitmap(pbMain.Width, pbMain.Height);
             _temp = (Bitmap)pbMain.Image.Clone();
         }
+
+        private void GetPen()
+        {
+            pen = new Pen(Color.Red, 3);
+            pen.StartCap = System.Drawing.Drawing2D.LineCap.Round;
+            pen.EndCap = System.Drawing.Drawing2D.LineCap.Round;
+        }
+
+        private void DisableToolMenu()
+        {
+            foreach (ToolStripItem item in tsMain.Items)
+            {
+                item.BackColor = SystemColors.Control;
+            }
+        }
+
         private void pictureBox1_MouseUp(object sender, MouseEventArgs e)
         {
             _isClicked = false;
             _temp = (Bitmap)pbMain.Image.Clone();
-            arrayPointsList.Add(arrayPoints);
-            arrayPoints = new ArrayPoints(2);
+
+            if (_drawingTool != null)
+            {
+                _toolList.Add(_drawingTool);
+
+                switch (toolType)
+                {
+                    case ToolType.Pen:
+                        _drawingTool = new MyPen(2);
+                        break;
+                    case ToolType.Line:
+                        _drawingTool = new MyLine();
+                        break;
+                    default:
+                        break;
+                }
+            }
+
         }
+
         private void pictureBox1_MouseDown(object sender, MouseEventArgs e)
         {
             _isClicked = true;
-            _start = e.Location;
-
+            if (_drawingTool != null)
+            {
+                _drawingTool.AddPoint(e.X, e.Y);
+            }
         }
+
         private void pictureBox1_MouseMove(object sender, MouseEventArgs e)
         {
-            if (_isClicked)
+            if (_isClicked && _drawingTool != null)
             {
                 using (var bitmap = new Bitmap(_temp, pbMain.Width, pbMain.Height))
                 using (var graphics = Graphics.FromImage(bitmap))
                 {
-                    Pen pen = new Pen(Color.Red, 3);
-
-                    switch (toolType)
-                    {
-                        case ToolType.Pen:
-                            arrayPoints.AddPoint(e.X, e.Y);
-                            if (arrayPoints.GetPoints().Length >= 2)
-                            {
-                                graphics.DrawLines(pen, arrayPoints.GetPoints());
-                            }
-                            break;
-                        case ToolType.Line:
-                            graphics.DrawLine(pen, _start, e.Location);
-                            break;
-                        default:
-                            break;
-                    }
-
+                    GetPen();
+                    _drawingTool.Draw(graphics, pen, e.X, e.Y);
                     pbMain.Image?.Dispose();
                     pbMain.Image = (Bitmap)bitmap.Clone();
                 }
@@ -76,14 +101,7 @@ namespace Paint
             toolType = ToolType.Pen;
             DisableToolMenu();
             tsbPen.BackColor = Color.Gold;
-        }
-
-        private void DisableToolMenu()
-        {
-            foreach (ToolStripItem item in tsMain.Items)
-            {
-                item.BackColor = SystemColors.Control;
-            }
+            _drawingTool = new MyPen(2);
         }
 
         private void tsbLine_Click(object sender, EventArgs e)
@@ -91,11 +109,7 @@ namespace Paint
             toolType = ToolType.Line;
             DisableToolMenu();
             tsbLine.BackColor = Color.Gold;
-        }
-        enum ToolType
-        {
-            Pen = 1,
-            Line = 2
+            _drawingTool = new MyLine();
         }
     }
 }

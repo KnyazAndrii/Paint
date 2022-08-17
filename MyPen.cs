@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 
 namespace Paint
 {
-    public class ArrayPoints
+    public class MyPen : BaseTool
     {
         private int _index = 0;
         private Point[] _points;
 
-        public void AddPoint(int x, int y)
+        public override void AddPoint(int x, int y)
         {
             if (_points.Length <= _index)
             {
@@ -37,9 +37,18 @@ namespace Paint
             return points;
         }
 
-        public ArrayPoints(int size)
+        public MyPen(int size)
         {
             this._points = new Point[size];
+        }
+
+        public override void Draw(Graphics graphics, Pen pen, int X, int Y)
+        {
+            this.AddPoint(X, Y);
+            if (this.GetPoints().Length >= 2)
+            {
+                graphics.DrawLines(pen, this.GetPoints());
+            }
         }
     }
 }
